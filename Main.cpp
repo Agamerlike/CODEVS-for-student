@@ -3,6 +3,7 @@
  */
 #include <iostream>
 #include <vector>
+#include <string>
 #include <algorithm>
 #include <random>
 using namespace std;
@@ -179,6 +180,997 @@ public:
   State() {}
 
   /**
+   *フィールドにブロックを落とすことをシミュレートします
+   */
+   int BoardSim(int field[][10],int touka,int turns)
+  {
+		int h = 0;
+    //消せるかどうか確認
+    //落とすことをシミュレート
+		for (int k = 0; k < 3; k++)
+		{
+			for (int l = 2; l > -1; l--)
+			{
+				if (packs[turn+turns].blocks[k][l] != 0)
+				{
+					while (field[h][touka + k - 2] == 0 && h < 19)
+					{
+						field[h][touka + k - 2] = packs[turn+turns].blocks[k][l];
+						h++;
+					}
+				}
+				h = 0;
+			}
+		}
+    //消すことをシミュレート
+    return DelBrock(field);
+  }
+	/*与えられたフィールドに対してブロックを消すシミュレーションを行う関数（連鎖込み）
+	**得られたスコアを返す
+	*/
+  int DelBrock(int field[][10])
+  {
+    int flag = 1;
+    int score = 0;//獲得スコア
+    int add = 0;//現在までの加算結果
+    int chain = 0;//チェイン数
+    int cnt = 0;//消滅カウント
+    bool flagfield[19][10];//消すブロックを管理するためのフィールド
+    while (flag == 1)
+		{
+			flag = 0;
+			chain++;
+			for (int i = 0; i<19; i++)
+			{
+				for (int j = 0; j<10; j++)
+				{
+					flagfield[i][j] = false;
+				}
+			}
+			for (int i = 18;i > -1; i--)
+			{
+				for (int j = 0; j < 10; j++)
+				{
+					if (field[i][j] == 0 && field[i - 1][j] != 0 && i - 1 > -1)
+					{
+						field[i][j] = field[i - 1][j];
+						field[i - 1][j] = 0;
+					}
+				}
+			}
+			//消すことをシミュレート
+			for (int i = 0; i < 19; i++)
+			{
+				for (int j = 0; j < 10; j++)
+				{
+					//上下左右斜めについて調べる
+					//左
+					if (j - 1 > -1)
+					{
+						//左上
+						if (i - 1 > -1 && (add = field[i - 1][j - 1] + field[i][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i][j]=true;
+              flagfield[i-1][j-1]=true;
+						}else if(j-2 > -1 && i-2 > -1 &&field[i-1][j-1] != 0&& add < 10)
+            {
+              if((add += field[i-2][j-2]) == 10)
+              {
+                flag = 1;
+                flagfield[i][j]=true;
+                flagfield[i-1][j-1]=true;
+                flagfield[i-2][j-2]=true;
+							}
+							else if (j - 3 > -1 && i - 3 > -1 && field[i - 2][j - 2] != 0 && add < 10)
+							{
+								if ((add += field[i - 3][j - 3]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i - 1][j - 1] = true;
+									flagfield[i - 2][j - 2] = true;
+									flagfield[i - 3][j - 3] = true;
+								}
+								else if (j - 4 > -1 && i - 4 > -1 && field[i - 3][j - 3] != 0 && add < 10)
+								{
+									if ((add += field[i - 4][j - 4]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i - 1][j - 1] = true;
+										flagfield[i - 2][j - 2] = true;
+										flagfield[i - 3][j - 3] = true;
+										flagfield[i - 4][j - 4] = true;
+									}
+									else if (j - 5 > -1 && i - 5 > -1 && field[i - 4][j - 4] != 0 && add < 10)
+									{
+										if ((add += field[i - 5][j - 5]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i - 1][j - 1] = true;
+											flagfield[i - 2][j - 2] = true;
+											flagfield[i - 3][j - 3] = true;
+											flagfield[i - 4][j - 4] = true;
+											flagfield[i - 5][j - 5] = true;
+										}
+										else if (j - 6 > -1 && i - 6 > -1 && field[i - 5][j - 5] != 0 && add < 10)
+										{
+											if ((add += field[i - 6][j - 6]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i - 1][j - 1] = true;
+												flagfield[i - 2][j - 2] = true;
+												flagfield[i - 3][j - 3] = true;
+												flagfield[i - 4][j - 4] = true;
+												flagfield[i - 5][j - 5] = true;
+												flagfield[i - 6][j - 6] = true;
+											}
+											else if (j - 7 > -1 && i - 7 > -1 && field[i - 6][j - 6] != 0 && add < 10)
+											{
+												if ((add += field[i - 7][j - 7]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i - 1][j - 1] = true;
+													flagfield[i - 2][j - 2] = true;
+													flagfield[i - 3][j - 3] = true;
+													flagfield[i - 4][j - 4] = true;
+													flagfield[i - 5][j - 5] = true;
+													flagfield[i - 6][j - 6] = true;
+													flagfield[i - 7][j - 7] = true;
+												}
+												else if (j - 8 > -1 && i - 8 > -1 && field[i - 7][j - 7] != 0 && add < 10)
+												{
+													if ((add += field[i - 8][j - 8]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i - 1][j - 1] = true;
+														flagfield[i - 2][j - 2] = true;
+														flagfield[i - 3][j - 3] = true;
+														flagfield[i - 4][j - 4] = true;
+														flagfield[i - 5][j - 5] = true;
+														flagfield[i - 6][j - 6] = true;
+														flagfield[i - 7][j - 7] = true;
+														flagfield[i - 8][j - 8] = true;
+													}
+													else if (j - 9 > -1 && i - 9 > -1 && field[i - 8][j - 8] != 0 && add < 10)
+													{
+														if ((add += field[i - 9][j - 9]) == 10)
+														{
+															flag = 1;
+															flagfield[i][j] = true;
+															flagfield[i - 1][j - 1] = true;
+															flagfield[i - 2][j - 2] = true;
+															flagfield[i - 3][j - 3] = true;
+															flagfield[i - 4][j - 4] = true;
+															flagfield[i - 5][j - 5] = true;
+															flagfield[i - 6][j - 6] = true;
+															flagfield[i - 7][j - 7] = true;
+															flagfield[i - 8][j - 8] = true;
+															flagfield[i - 9][j - 9] = true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+            }
+						//左
+						if ((add = field[i][j - 1] + field[i][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i][j - 1] = true;
+							flagfield[i][j] = true;
+						}
+						else if (j - 2 > -1 && field[i][j - 1] != 0 && add < 10) {
+							if ((add += field[i][j - 2]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i][j - 1] = true;
+								flagfield[i][j - 2] = true;
+							}
+							else if (j - 3 > -1 && field[i][j - 2] != 0 && add < 10) {
+								if ((add += field[i][j - 3]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i][j - 1] = true;
+									flagfield[i][j - 2] = true;
+									flagfield[i][j - 3] = true;
+								}
+								else if (j - 4 > -1 && field[i][j - 3] != 0 && add < 10) {
+									if ((add += field[i][j - 4]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i][j - 1] = true;
+										flagfield[i][j - 2] = true;
+										flagfield[i][j - 3] = true;
+										flagfield[i][j - 4] = true;
+									}
+									else if (j - 5 > -1 && field[i][j - 4] != 0 && add < 10) {
+										if ((add += field[i][j - 5]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i][j - 1] = true;
+											flagfield[i][j - 2] = true;
+											flagfield[i][j - 3] = true;
+											flagfield[i][j - 4] = true;
+											flagfield[i][j - 5] = true;
+										}
+										else if (j - 6 > -1 && field[i][j - 5] != 0 && add < 10) {
+											if ((add += field[i][j - 6]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i][j - 1] = true;
+												flagfield[i][j - 2] = true;
+												flagfield[i][j - 3] = true;
+												flagfield[i][j - 4] = true;
+												flagfield[i][j - 5] = true;
+												flagfield[i][j - 6] = true;
+											}
+											else if (j - 7 > -1 && field[i][j - 6] != 0 && add < 10) {
+												if ((add += field[i][j - 7]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i][j - 1] = true;
+													flagfield[i][j - 2] = true;
+													flagfield[i][j - 3] = true;
+													flagfield[i][j - 4] = true;
+													flagfield[i][j - 5] = true;
+													flagfield[i][j - 6] = true;
+													flagfield[i][j - 7] = true;
+												}
+												else if (j - 8 > -1 && field[i][j - 7] != 0 && add < 10) {
+													if ((add += field[i][j - 8]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i][j - 1] = true;
+														flagfield[i][j - 2] = true;
+														flagfield[i][j - 3] = true;
+														flagfield[i][j - 4] = true;
+														flagfield[i][j - 5] = true;
+														flagfield[i][j - 6] = true;
+														flagfield[i][j - 7] = true;
+														flagfield[i][j - 8] = true;
+													}
+													else if (j - 9 > -1 && field[i][j - 8] != 0 && add < 10) {
+														if ((add += field[i][j - 9]) == 10)
+														{
+															flag = 1;
+															flagfield[i][j] = true;
+															flagfield[i][j - 1] = true;
+															flagfield[i][j - 2] = true;
+															flagfield[i][j - 3] = true;
+															flagfield[i][j - 4] = true;
+															flagfield[i][j - 5] = true;
+															flagfield[i][j - 6] = true;
+															flagfield[i][j - 7] = true;
+															flagfield[i][j - 8] = true;
+															flagfield[i][j - 9] = true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						//左下
+						if (i + 1 < 19 && (add=field[i + 1][j - 1] + field[i][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i + 1][j - 1] = true;
+							flagfield[i][j] = true;
+						}
+						else if (j - 2 > -1 && i + 2 < 19 && field[i+1][j - 1] != 0 && add < 10) {
+							if ((add += field[i + 2][j - 2]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i + 1][j - 1] = true;
+								flagfield[i + 2][j - 2] = true;
+							}
+							else if (j - 3 > -1 && i + 3 < 19 && field[i + 2][j - 2] != 0 && add < 10) {
+								if ((add += field[i + 3][j - 3]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i + 1][j - 1] = true;
+									flagfield[i + 2][j - 2] = true;
+									flagfield[i + 3][j - 3] = true;
+								}
+								else if (j - 4 > -1 && i + 4 < 19 && field[i + 3][j - 3] != 0 && add < 10) {
+									if ((add += field[i + 4][j - 4]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i + 1][j - 1] = true;
+										flagfield[i + 2][j - 2] = true;
+										flagfield[i + 3][j - 3] = true;
+										flagfield[i + 4][j - 4] = true;
+									}
+									else if (j - 5 > -1 && i + 5 < 19 && field[i + 4][j - 4] != 0 && add < 10) {
+										if ((add += field[i + 5][j - 5]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i + 1][j - 1] = true;
+											flagfield[i + 2][j - 2] = true;
+											flagfield[i + 3][j - 3] = true;
+											flagfield[i + 4][j - 4] = true;
+											flagfield[i + 5][j - 5] = true;
+										}
+										else if (j - 6 > -1 && i + 6 < 19 && field[i + 5][j - 5] != 0 && add < 10) {
+											if ((add += field[i + 6][j - 6]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i + 1][j - 1] = true;
+												flagfield[i + 2][j - 2] = true;
+												flagfield[i + 3][j - 3] = true;
+												flagfield[i + 4][j - 4] = true;
+												flagfield[i + 5][j - 5] = true;
+												flagfield[i + 6][j - 6] = true;
+											}
+											else if (j - 7 > -1 && i + 7 < 19 && field[i + 6][j - 6] != 0 && add < 10) {
+												if ((add += field[i + 7][j - 7]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i + 1][j - 1] = true;
+													flagfield[i + 2][j - 2] = true;
+													flagfield[i + 3][j - 3] = true;
+													flagfield[i + 4][j - 4] = true;
+													flagfield[i + 5][j - 5] = true;
+													flagfield[i + 6][j - 6] = true;
+													flagfield[i + 7][j - 7] = true;
+												}
+												else if (j - 8 > -1 && i + 8 < 19 && field[i + 7][j - 7] != 0 && add < 10) {
+													if ((add += field[i + 8][j - 8]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i + 1][j - 1] = true;
+														flagfield[i + 2][j - 2] = true;
+														flagfield[i + 3][j - 3] = true;
+														flagfield[i + 4][j - 4] = true;
+														flagfield[i + 5][j - 5] = true;
+														flagfield[i + 6][j - 6] = true;
+														flagfield[i + 7][j - 7] = true;
+														flagfield[i + 8][j - 8] = true;
+													}
+													else if (j - 9 > -1 && i +9 < 19 && field[i + 8][j - 8] != 0 && add < 10) {
+														if ((add += field[i + 9][j - 9]) == 10)
+														{
+															flag = 1;
+															flagfield[i][j] = true;
+															flagfield[i + 1][j - 1] = true;
+															flagfield[i + 2][j - 2] = true;
+															flagfield[i + 3][j - 3] = true;
+															flagfield[i + 4][j - 4] = true;
+															flagfield[i + 5][j - 5] = true;
+															flagfield[i + 6][j - 6] = true;
+															flagfield[i + 7][j - 7] = true;
+															flagfield[i + 8][j - 8] = true;
+															flagfield[i + 9][j - 9] = true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					//上
+					if (i - 1 > -1 && (add=field[i - 1][j] + field[i][j]) == 10)
+					{
+						flag = 1;
+						flagfield[i - 1][j] = true;
+						flagfield[i][j] = true;
+					}
+					else if (i - 2 > -1 && field[i - 1][j] != 0 && add < 10) {
+						if ((add += field[i - 2][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i][j] = true;
+							flagfield[i - 1][j] = true;
+							flagfield[i - 2][j] = true;
+						}
+						else if (i - 3 > -1 && field[i - 2][j] != 0 && add < 10) {
+							if ((add += field[i - 3][j]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i - 1][j] = true;
+								flagfield[i - 2][j] = true;
+								flagfield[i - 3][j] = true;
+							}
+							else if (i - 4 > -1 && field[i - 3][j] != 0 && add < 10) {
+								if ((add += field[i - 4][j]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i - 1][j] = true;
+									flagfield[i - 2][j] = true;
+									flagfield[i - 3][j] = true;
+									flagfield[i - 4][j] = true;
+								}
+								else if (i - 5 > -1 && field[i - 4][j] != 0 && add < 10) {
+									if ((add += field[i - 5][j]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i - 1][j] = true;
+										flagfield[i - 2][j] = true;
+										flagfield[i - 3][j] = true;
+										flagfield[i - 4][j] = true;
+										flagfield[i - 5][j] = true;
+									}
+									else if (i - 6 > -1 && field[i - 5][j] != 0 && add < 10) {
+										if ((add += field[i - 6][j]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i - 1][j] = true;
+											flagfield[i - 2][j] = true;
+											flagfield[i - 3][j] = true;
+											flagfield[i - 4][j] = true;
+											flagfield[i - 5][j] = true;
+											flagfield[i - 6][j] = true;
+										}
+										else if (i - 7 > -1 && field[i - 6][j] != 0 && add < 10) {
+											if ((add += field[i - 7][j]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i - 1][j] = true;
+												flagfield[i - 2][j] = true;
+												flagfield[i - 3][j] = true;
+												flagfield[i - 4][j] = true;
+												flagfield[i - 5][j] = true;
+												flagfield[i - 6][j] = true;
+												flagfield[i - 7][j] = true;
+											}
+											else if (i - 8 > -1 && field[i - 7][j] != 0 && add < 10) {
+												if ((add += field[i - 8][j]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i - 1][j] = true;
+													flagfield[i - 2][j] = true;
+													flagfield[i - 3][j] = true;
+													flagfield[i - 4][j] = true;
+													flagfield[i - 5][j] = true;
+													flagfield[i - 6][j] = true;
+													flagfield[i - 7][j] = true;
+													flagfield[i - 8][j] = true;
+												}
+												else if (i - 9 > -1 && field[i - 8][j] != 0 && add < 10) {
+													if ((add += field[i - 9][j]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i - 1][j] = true;
+														flagfield[i - 2][j] = true;
+														flagfield[i - 3][j] = true;
+														flagfield[i - 4][j] = true;
+														flagfield[i - 5][j] = true;
+														flagfield[i - 6][j] = true;
+														flagfield[i - 7][j] = true;
+														flagfield[i - 8][j] = true;
+														flagfield[i - 9][j] = true;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					//右
+					if (j + 1 < 10)
+					{
+						//右上
+						if (i - 1 > -1 && (add=field[i - 1][j + 1] + field[i][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i - 1][j + 1] = true;
+							flagfield[i][j] = true;
+						}
+						else if (j + 2 < 10 && i - 2 > -1 && field[i - 1][j + 1] != 0 && add < 10) {
+							if ((add += field[i - 2][j + 2]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i - 1][j + 1] = true;
+								flagfield[i - 2][j + 2] = true;
+							}
+							else if (j + 3 < 10 && i - 3 > -1 && field[i - 2][j + 2] != 0 && add < 10) {
+								if ((add += field[i - 3][j + 3]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i - 1][j + 1] = true;
+									flagfield[i - 2][j + 2] = true;
+									flagfield[i - 3][j + 3] = true;
+								}
+								else if (j + 4 < 10 && i - 4 > -1 && field[i - 3][j + 3] != 0 && add < 10) {
+									if ((add += field[i - 4][j + 4]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i - 1][j + 1] = true;
+										flagfield[i - 2][j + 2] = true;
+										flagfield[i - 3][j + 3] = true;
+										flagfield[i - 4][j + 4] = true;
+									}
+									else if (j + 5 < 10 && i - 5 > -1 && field[i - 4][j + 4] != 0 && add < 10) {
+										if ((add += field[i - 5][j + 5]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i - 1][j + 1] = true;
+											flagfield[i - 2][j + 2] = true;
+											flagfield[i - 3][j + 3] = true;
+											flagfield[i - 4][j + 4] = true;
+											flagfield[i - 5][j + 5] = true;
+										}
+										else if (j + 6 < 10 && i - 6 > -1 && field[i - 5][j + 5] != 0 && add < 10) {
+											if ((add += field[i - 6][j + 6]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i - 1][j + 1] = true;
+												flagfield[i - 2][j + 2] = true;
+												flagfield[i - 3][j + 3] = true;
+												flagfield[i - 4][j + 4] = true;
+												flagfield[i - 5][j + 5] = true;
+												flagfield[i - 6][j + 6] = true;
+											}
+											else if (j + 7 < 10 && i - 7 > -1 && field[i - 6][j + 6] != 0 && add < 10) {
+												if ((add += field[i - 7][j + 7]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i - 1][j + 1] = true;
+													flagfield[i - 2][j + 2] = true;
+													flagfield[i - 3][j + 3] = true;
+													flagfield[i - 4][j + 4] = true;
+													flagfield[i - 5][j + 5] = true;
+													flagfield[i - 6][j + 6] = true;
+													flagfield[i - 7][j + 7] = true;
+												}
+												else if (j + 8 < 10 && i - 8 > -1 && field[i - 7][j + 7] != 0 && add < 10) {
+													if ((add += field[i - 8][j + 8]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i - 1][j + 1] = true;
+														flagfield[i - 2][j + 2] = true;
+														flagfield[i - 3][j + 3] = true;
+														flagfield[i - 4][j + 4] = true;
+														flagfield[i - 5][j + 5] = true;
+														flagfield[i - 6][j + 6] = true;
+														flagfield[i - 7][j + 7] = true;
+														flagfield[i - 8][j + 8] = true;
+													}
+													else if (j + 9 < 10 && i - 9 > -1 && field[i - 8][j + 8] != 0 && add < 10) {
+														if ((add += field[i - 9][j + 9]) == 10)
+														{
+															flag = 1;
+															flagfield[i][j] = true;
+															flagfield[i - 1][j + 1] = true;
+															flagfield[i - 2][j + 2] = true;
+															flagfield[i - 3][j + 3] = true;
+															flagfield[i - 4][j + 4] = true;
+															flagfield[i - 5][j + 5] = true;
+															flagfield[i - 6][j + 6] = true;
+															flagfield[i - 7][j + 7] = true;
+															flagfield[i - 8][j + 8] = true;
+															flagfield[i - 9][j + 9] = true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						//右
+						if ((add=field[i][j + 1] + field[i][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i][j + 1] = true;
+							flagfield[i][j] = true;
+						}
+						else if (j + 2 < 10 && field[i][j + 1] != 0 && add < 10)
+						{
+							if ((add += field[i][j + 2]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i][j + 1] = true;
+								flagfield[i][j + 2] = true;
+							}
+							else if (j + 3 < 10 && field[i][j + 2] != 0 && add < 10)
+							{
+								if ((add += field[i][j + 3]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i][j + 1] = true;
+									flagfield[i][j + 2] = true;
+									flagfield[i][j + 3] = true;
+								}
+								else if (j + 4 < 10 && field[i][j + 3] != 0 && add < 10)
+								{
+									if ((add += field[i][j + 4]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i][j + 1] = true;
+										flagfield[i][j + 2] = true;
+										flagfield[i][j + 3] = true;
+										flagfield[i][j + 4] = true;
+									}
+									else if (j + 5 < 10 && field[i][j + 4] != 0 && add < 10)
+									{
+										if ((add += field[i][j + 5]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i][j + 1] = true;
+											flagfield[i][j + 2] = true;
+											flagfield[i][j + 3] = true;
+											flagfield[i][j + 4] = true;
+											flagfield[i][j + 5] = true;
+										}
+										else if (j + 6 < 10 && field[i][j + 5] != 0 && add < 10)
+										{
+											if ((add += field[i][j + 6]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i][j + 1] = true;
+												flagfield[i][j + 2] = true;
+												flagfield[i][j + 3] = true;
+												flagfield[i][j + 4] = true;
+												flagfield[i][j + 5] = true;
+												flagfield[i][j + 6] = true;
+											}
+											else if (j + 7 < 10 && field[i][j + 6] != 0 && add < 10)
+											{
+												if ((add += field[i][j + 7]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i][j + 1] = true;
+													flagfield[i][j + 2] = true;
+													flagfield[i][j + 3] = true;
+													flagfield[i][j + 4] = true;
+													flagfield[i][j + 5] = true;
+													flagfield[i][j + 6] = true;
+													flagfield[i][j + 7] = true;
+												}
+												else if (j + 8 < 10 && field[i][j + 7] != 0 && add < 10)
+												{
+													if ((add += field[i][j + 8]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i][j + 1] = true;
+														flagfield[i][j + 2] = true;
+														flagfield[i][j + 3] = true;
+														flagfield[i][j + 4] = true;
+														flagfield[i][j + 5] = true;
+														flagfield[i][j + 6] = true;
+														flagfield[i][j + 7] = true;
+														flagfield[i][j + 8] = true;
+													}
+													else if (j + 9 < 10 && field[i][j + 8] != 0 && add < 10)
+													{
+														if ((add += field[i][j + 9]) == 10)
+														{
+															flag = 1;
+															flagfield[i][j] = true;
+															flagfield[i][j + 1] = true;
+															flagfield[i][j + 2] = true;
+															flagfield[i][j + 3] = true;
+															flagfield[i][j + 4] = true;
+															flagfield[i][j + 5] = true;
+															flagfield[i][j + 6] = true;
+															flagfield[i][j + 7] = true;
+															flagfield[i][j + 8] = true;
+															flagfield[i][j + 9] = true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+						//右下
+						if (i + 1 < 19 && (add=field[i + 1][j + 1] + field[i][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i + 1][j + 1] = true;
+							flagfield[i][j] = true;
+						}
+						else if (i + 2 < 19 && j + 2 < 10 && field[i + 1][j + 1] != 0 && add < 10)
+						{
+							if ((add += field[i + 2][j + 2]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i + 1][j + 1] = true;
+								flagfield[i + 2][j + 2] = true;
+							}
+							else if (i + 3 < 19 && j + 3 < 10 && field[i + 2][j + 2] != 0 && add < 10)
+							{
+								if ((add += field[i + 3][j + 3]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i + 1][j + 1] = true;
+									flagfield[i + 2][j + 2] = true;
+									flagfield[i + 3][j + 3] = true;
+								}
+								else if (i + 4 < 19 && j + 4 < 10 && field[i + 3][j + 3] != 0 && add < 10)
+								{
+									if ((add += field[i + 4][j + 4]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i + 1][j + 1] = true;
+										flagfield[i + 2][j + 2] = true;
+										flagfield[i + 3][j + 3] = true;
+										flagfield[i + 4][j + 4] = true;
+									}
+									else if (i + 5 < 19 && j + 5 < 10 && field[i + 4][j + 4] != 0 && add < 10)
+									{
+										if ((add += field[i + 5][j + 5]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i + 1][j + 1] = true;
+											flagfield[i + 2][j + 2] = true;
+											flagfield[i + 3][j + 3] = true;
+											flagfield[i + 4][j + 4] = true;
+											flagfield[i + 5][j + 5] = true;
+										}
+										else if (i + 6 < 19 && j + 6 < 10 && field[i + 5][j + 5] != 0 && add < 10)
+										{
+											if ((add += field[i + 6][j + 6]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i + 1][j + 1] = true;
+												flagfield[i + 2][j + 2] = true;
+												flagfield[i + 3][j + 3] = true;
+												flagfield[i + 4][j + 4] = true;
+												flagfield[i + 5][j + 5] = true;
+												flagfield[i + 6][j + 6] = true;
+											}
+											else if (i + 7 < 19 && j + 7 < 10 && field[i + 6][j + 6] != 0 && add < 10)
+											{
+												if ((add += field[i + 7][j + 7]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i + 1][j + 1] = true;
+													flagfield[i + 2][j + 2] = true;
+													flagfield[i + 3][j + 3] = true;
+													flagfield[i + 4][j + 4] = true;
+													flagfield[i + 5][j + 5] = true;
+													flagfield[i + 6][j + 6] = true;
+													flagfield[i + 7][j + 7] = true;
+												}
+												else if (i + 8 < 19 && j + 8 < 10 && field[i + 7][j + 7] != 0 && add < 10)
+												{
+													if ((add += field[i + 8][j + 8]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i + 1][j + 1] = true;
+														flagfield[i + 2][j + 2] = true;
+														flagfield[i + 3][j + 3] = true;
+														flagfield[i + 4][j + 4] = true;
+														flagfield[i + 5][j + 5] = true;
+														flagfield[i + 6][j + 6] = true;
+														flagfield[i + 7][j + 7] = true;
+														flagfield[i + 8][j + 8] = true;
+													}
+													else if (i + 9 < 19 && j + 9 < 10 && field[i + 8][j + 8] != 0 && add < 10)
+													{
+														if ((add += field[i + 9][j + 9]) == 10)
+														{
+															flag = 1;
+															flagfield[i][j] = true;
+															flagfield[i + 1][j + 1] = true;
+															flagfield[i + 2][j + 2] = true;
+															flagfield[i + 3][j + 3] = true;
+															flagfield[i + 4][j + 4] = true;
+															flagfield[i + 5][j + 5] = true;
+															flagfield[i + 6][j + 6] = true;
+															flagfield[i + 7][j + 7] = true;
+															flagfield[i + 8][j + 8] = true;
+															flagfield[i + 9][j + 9] = true;
+														}
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					//下
+					if (i + 1 < 19 && (add=field[i + 1][j] + field[i][j]) == 10)
+					{
+						flag = 1;
+						flagfield[i + 1][j] = true;
+						flagfield[i][j] = true;
+					}
+					else if (i + 2 < 19 && field[i + 1][j] != 0 && add < 10)
+					{
+						if ((add += field[i + 2][j]) == 10)
+						{
+							flag = 1;
+							flagfield[i][j] = true;
+							flagfield[i + 1][j] = true;
+							flagfield[i + 2][j] = true;
+						}
+						else if (i + 3 < 19 && field[i + 2][j] != 0 && add < 10)
+						{
+							if ((add += field[i + 3][j]) == 10)
+							{
+								flag = 1;
+								flagfield[i][j] = true;
+								flagfield[i + 1][j] = true;
+								flagfield[i + 2][j] = true;
+								flagfield[i + 3][j] = true;
+							}
+							else if (i + 4 < 19 && field[i + 3][j] != 0 && add < 10)
+							{
+								if ((add += field[i + 4][j]) == 10)
+								{
+									flag = 1;
+									flagfield[i][j] = true;
+									flagfield[i + 1][j] = true;
+									flagfield[i + 2][j] = true;
+									flagfield[i + 3][j] = true;
+									flagfield[i + 4][j] = true;
+								}
+								else if (i + 5 < 19 && field[i + 4][j] != 0 && add < 10)
+								{
+									if ((add += field[i + 5][j]) == 10)
+									{
+										flag = 1;
+										flagfield[i][j] = true;
+										flagfield[i + 1][j] = true;
+										flagfield[i + 2][j] = true;
+										flagfield[i + 3][j] = true;
+										flagfield[i + 4][j] = true;
+										flagfield[i + 5][j] = true;
+									}
+									else if (i + 6 < 19 && field[i + 5][j] != 0 && add < 10)
+									{
+										if ((add += field[i + 6][j]) == 10)
+										{
+											flag = 1;
+											flagfield[i][j] = true;
+											flagfield[i + 1][j] = true;
+											flagfield[i + 2][j] = true;
+											flagfield[i + 3][j] = true;
+											flagfield[i + 4][j] = true;
+											flagfield[i + 5][j] = true;
+											flagfield[i + 6][j] = true;
+										}
+										else if (i + 7 < 19 && field[i + 6][j] != 0 && add < 10)
+										{
+											if ((add += field[i + 7][j]) == 10)
+											{
+												flag = 1;
+												flagfield[i][j] = true;
+												flagfield[i + 1][j] = true;
+												flagfield[i + 2][j] = true;
+												flagfield[i + 3][j] = true;
+												flagfield[i + 4][j] = true;
+												flagfield[i + 5][j] = true;
+												flagfield[i + 6][j] = true;
+												flagfield[i + 7][j] = true;
+											}
+											else if (i + 8 < 19 && field[i + 7][j] != 0 && add < 10)
+											{
+												if ((add += field[i + 8][j]) == 10)
+												{
+													flag = 1;
+													flagfield[i][j] = true;
+													flagfield[i + 1][j] = true;
+													flagfield[i + 2][j] = true;
+													flagfield[i + 3][j] = true;
+													flagfield[i + 4][j] = true;
+													flagfield[i + 5][j] = true;
+													flagfield[i + 6][j] = true;
+													flagfield[i + 7][j] = true;
+													flagfield[i + 8][j] = true;
+												}
+												else if (i + 9 < 19 && field[i + 8][j] != 0 && add < 10)
+												{
+													if ((add += field[i + 9][j]) == 10)
+													{
+														flag = 1;
+														flagfield[i][j] = true;
+														flagfield[i + 1][j] = true;
+														flagfield[i + 2][j] = true;
+														flagfield[i + 3][j] = true;
+														flagfield[i + 4][j] = true;
+														flagfield[i + 5][j] = true;
+														flagfield[i + 6][j] = true;
+														flagfield[i + 7][j] = true;
+														flagfield[i + 8][j] = true;
+														flagfield[i + 9][j] = true;
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			//消滅カウント数の計算
+			for (int i = 0; i < 19; i++)
+			{
+				for (int j = 0; j < 10; j++)
+				{
+					if (flagfield[i][j] == true)
+					{
+						cnt++;
+						field[i][j] = 0; //ブロックを消す
+					}
+				}
+			}
+			//現在の獲得スコアの計算
+			score += floor(pow(1.3, chain)) + floor((double)cnt / 2);
+			cnt = 0;
+		}
+		//ゲームオーバー時のスコアは評価しない
+		for (int i = 0; i < 3; i++)
+		{
+			for (int j = 0; j < 10; j++)
+			{
+				if (field[i][j] != 0)
+				{
+					score = -1;
+				}
+			}
+		}
+		return score;
+  }
+  /**
    * Stateを入力します。Stateを生成するときは必ず呼び出してください。
    */
   static State inputFirst() {
@@ -208,10 +1200,6 @@ public:
 
   /**
    * 現在のターンのパックをどこに落とすか決定して、標準出力します。
-   * 落とす位置の決め方
-   * - 回転角度はランダムで決める
-   * - 落下位置はランダムで決める
-   * - ただし、落下位置は、左端・右端に詰められる場合は、それも考慮する(-2, -1, 8, 9にも落とせる場合は落とす)
    */
   void executeTurn() {
     int rot = randInt(0, 4);
@@ -229,7 +1217,7 @@ public:
 };
 
 int main() {
-  cout << "SampleAI.cpp" << endl;
+  cout << "MyAI.cpp" << endl;
   cout.flush();
 
   State state = State::inputFirst();
