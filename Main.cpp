@@ -227,14 +227,24 @@ public:
 					flagfield[i][j] = false;
 				}
 			}
-			for (int i = 18;i > -1; i--)
+			//ブロックを落とす
+			for (int i = 18; i > -1; i--)
 			{
 				for (int j = 0; j < 10; j++)
 				{
-					if (field[i][j] == 0 && field[i - 1][j] != 0 && i - 1 > -1)
+					if (field[i][j] == 0)
 					{
-						field[i][j] = field[i - 1][j];
-						field[i - 1][j] = 0;
+						h = i;
+						while (h>-1 && field[h][j] == 0)
+						{
+							h--;
+						}
+						cout << h << endl;
+						if (h>-1)
+						{
+							field[i][j] = field[h][j];
+							field[h][j] = 0;
+						}
 					}
 				}
 			}
@@ -1154,7 +1164,10 @@ public:
 				}
 			}
 			//現在の獲得スコアの計算
-			score += floor(pow(1.3, chain)) + floor((double)cnt / 2);
+			if (flag == 1)
+			{
+				score += floor(pow(1.3, chain)) + floor((double)cnt / 2);
+			}
 			cnt = 0;
 		}
 		//ゲームオーバー時のスコアは評価しない
