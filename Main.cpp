@@ -170,14 +170,16 @@ class Beam
 private:
 public:
 	int touka; //投下位置
+	int prev_state;//直前にどの状態から遷移したか
 	int rotate; //回転数
 	int hyoka; //評価関数の値
 	pair<int, int> hakka; //発火に必要な数字と投下位置(W)
+	int hakkaturn; //発火までに最低かかるターン
 	int state[19][10]; //盤面
 	/*
 	*コンストラクタ
 	*/
-	Beam(int field[][10],int t, int r)
+	Beam(int field[][10],int t, int r,int prev)
 	{	
 		for(int i = 0; i < 19; i++)
 		{
@@ -188,6 +190,7 @@ public:
 		}
 		touka = t;
 		rotate = r;
+		prev_state = prev;
 	}
 
 	/*直前の状態から移行
@@ -232,7 +235,6 @@ public:
 						{
 							h--;
 						}
-						cout << h << endl;
 						if(h>-1)
 						{
 							field[i][j] = field[h][j];
@@ -1147,7 +1149,7 @@ public:
 
 	/*
 	*評価関数から評価値を求めるための関数
-	*評価値=発火時のスコア-発火後に残ったゴミ*連鎖数
+	*評価値=発火時のスコア(-発火後に残ったゴミ*連鎖数)
 	*/
 	void RensaSim(int field[][10])
 	{
@@ -1169,7 +1171,7 @@ public:
 				}
 				Simfield[0][i] = j;
 				score = DelBrock(Simfield);
-				//重み付け
+				/*//重み付け
 				for(int k = 0; k < 19; k++)
 				{
 					for(int l = 0; l < 10; l++)
@@ -1179,7 +1181,7 @@ public:
 							score.first -= score.second;
 						}
 					}
-				}
+				}*/
 				if(score.first > pre_score)
 				{
 					hyoka = score.first;
@@ -1197,11 +1199,14 @@ class State {
 public:
   int W, H, T, S, N;
   int turn;
+	int first;
+	int keika;
   int remTime;
+	int beamres[101];//どのステートを利用するか
   vector<Pack> packs;
-	vector<Beam> states[101]; //探索最大ターン：100
-	Beam init_state; //初期状態
-	Beam next_state;
+	vector<Beam> states[21]; //探索最大ターン：20
+	//Beam init_state; //初期状態
+	//Beam next_state; //次の状態
   Field myField;
   Field enemyField;
   int myObstacle;
@@ -1298,7 +1303,6 @@ public:
 						{
 							h--;
 						}
-						cout << h << endl;
 						if (h>-1)
 						{
 							field[i][j] = field[h][j];
@@ -2244,13 +2248,14 @@ public:
   }
 	/*
 	 *ビームサーチを行う
+	 *ビームサーチを行ったターンを返す
 	*/
-	void Beam_Search()
+	int Beam_Search()
 	{
+		cerr << "Beam_Search() begin" << endl;
 		int field[19][10];
-		int beam_WIDTH = 20; //ビーム幅
+		int beam_WIDTH = 10; //ビーム幅
 		pair<int, int> sides;
-		int cnt = 0;
 		//フィールドの初期化
 		for(int i = 0; i < 3; i++)
 		{
@@ -2268,53 +2273,55 @@ public:
 		}
 		//ここからビームサーチ
 		//評価関数：発火時のスコア-発火後残ったゴミ*連鎖数
-		init_state = new Beam(field, 0, 0);
-		for(int depth = 0; depth < 100; ++depth)
+		Beam init_state = Beam(field, 0, 0, 0);
+		states[0].push_back(init_state);
+		for(int depth = 1; depth < 20; ++depth)
 		{
+			cerr << "depth" << depth << endl;
+			cerr << states[depth - 1].size() << endl;
 			//探索開始(depth)
 			//直前の状態を写し取る
-			for(int i = 0; i < 4; i++)
+			for(int cnt = 0; cnt < states[depth - 1].size(); cnt++)
 			{
-				for(int j = 0; j < 12; j++)
+				for(int i = 0; i < 4; i++)
 				{
-					//盤面の初期化
-					for(int k = 0; k < 19; k++)
+					for(int j = 0; j < 12; j++)
 					{
-						for(int l = 0; l < 10; l++)
+						//盤面の初期化
+						for(int k = 0; k < 19; k++)
 						{
-							field[i][j] = states[depth - 1][cnt].state[i][j];
+							for(int l = 0; l < 10; l++)
+							{
+								field[i][j] = states[depth - 1][cnt].state[i][j];
+							}
 						}
+						sides = packs[turn + depth - 1].getSides();
+						if(j - 2 < -sides.first || j - 2 > W - sides.second + 1)
+						{
+							continue;
+						}
+						BoardSim(field, j, packs[turn + depth - 1]);
+						//新しい状態の完成
+						Beam next_state = Beam(field, j - 2, i, cnt);
+						//評価関数の計算
+						next_state.RensaSim(field);
+						states[depth].push_back(next_state);
 					}
-					sides = packs[turn + depth].getSides();
-					if(j - 2 < -sides.first || j - 2 > W - sides.second + 1)
-					{
-						continue;
-					}
-					BoardSim(field, j, packs[turn + depth]);
-					//新しい状態の完成
-					next_state = new Beam(field, j - 2, i);
-					//評価関数の計算
-					next_state.RensaSim(field);
-					//評価関数の計算ここまで
-					states[depth].emplace_back(next_state);
+					packs[turn + depth - 1].rotate(1);
 				}
-				packs[turn + depth].rotate(1);
 			}
 			//探索終了
 			//評価値でソート
-			sort(states[depth].begin(), states[depth].end());
+			sort(states[depth].begin(), states[depth].end(), [](const Beam &x, const Beam &y) {return x.hyoka > y.hyoka; });
 			//上位評価値に入らないものを削除
 			if(states[depth].size() > beam_WIDTH)
 			{
 				states[depth].erase(states[depth].begin() + beam_WIDTH, states[depth].end());
 			}
-			//深さdepthの状態を列挙
-			for(Beam st:states[depth])
-			{
-				//各状態から次の状態を生成
-				//for(Beam next_state:)
-			}
 		}
+		//ここまでビームサーチ
+		cerr << "beam search done" << endl;
+		return turn;
 	}
   /**
    * Stateを入力します。Stateを生成するときは必ず呼び出してください。
@@ -2348,28 +2355,42 @@ public:
    * 現在のターンのパックをどこに落とすか決定して、標準出力します。
    */
 	void executeTurn() {
-		if (PackSurv() == 2)
+		cerr << "turn" << turn << " begin" << endl;
+		pair<int, int> exec;
+		/*if (PackSurv() == 2)
 		{
 			//なるべく早く発火する手順を探す
 		} else if(PackSurv() == 1) {
 			//ビームサーチを使って新しく連鎖を組み立てる
 		} else {
 			//ビームサーチを使って手数を探す
+		}*/
+		//以下普通にビームサーチするだけ（例外処理あり）
+		//おじゃまが1個でもあればビームサーチをやり直す
+		if(PackSurv() > 0)
+		{
+			cerr << "ojama detect" << endl;
+			first = Beam_Search();
+			keika = 1;
 		}
+		while(keika > 20 || turn == 0)
+		{
+			first = Beam_Search();
+			keika = 1;
+			/*beamres[100] = 0;
+			for(int i = 99; i > 0; i--)
+			{
+				beamres[i] = states[i][beamres[i+1]].prev_state;
+			}*/
+		}
+		exec = states[keika][0].getExecute();
+		keika++;
+		packs[turn].rotate(exec.second);
+		cerr << "turn" << turn << " done" << endl;
+
+		cout << exec.first << " " << packs[turn].rotateCnt << endl;
+		cout.flush();
 	}
-  /*void executeTurn() {
-    int rot = randInt(0, 4);
-
-    myObstacle -= packs[turn].fillWithObstacle(myObstacle);
-    packs[turn].rotate(rot);
-
-    pair<int,int> sides = packs[turn].getSides();
-    int packWidth = sides.second - sides.first + 1;
-    int pos = randInt(0, W - packWidth + 1) - sides.first;
-
-    cout << pos << " " << packs[turn].rotateCnt << endl;
-    cout.flush();
-  }*/
 
 };
 
@@ -2389,7 +2410,6 @@ int main() {
       cerr.flush();
       break;
     }
-
     state.executeTurn();
   }
 }
