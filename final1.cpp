@@ -172,35 +172,6 @@ public:
   int enemyObstacle;
 	
   State() {}
-	/*
-	 *パックにおじゃまが含まれているかどうかを確認する関数
-	 *0個なら0
-	 *1個以上含まれていたら1
-	 *4個以上含まれていたら2を返す
-	 */
-	int PackSurv()
-	{
-		int ojama = 0;
-		for (int i = 0; i < 3; i++)
-		{
-			for (int j = 0; j < 3; j++)
-			{
-				if (packs[turn].blocks[i][j] == 11)
-				{
-					ojama++;
-				}
-			}
-		}
-		if (ojama > 3)
-		{
-			return 2;
-		} else if(ojama > 0) {
-			return 1;
-		} else {
-			return 0;
-		}
-	}
-
 	/**
 	* 1番低い場所と1番高い場所を取得する
 	* first...minheight
@@ -1265,6 +1236,7 @@ public:
 		//回転→場所の順で調べる
 		for(int i = 0; i < 4; i++)
 		{
+			myObstacle -= packs[turn].fillWithObstacle(myObstacle);
 			sides = packs[turn].getSides();
 			for(int j = 0; j < 12; j++)
 			{
