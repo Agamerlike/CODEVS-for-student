@@ -1158,7 +1158,7 @@ public:
 			cnt = 0;
 		}
 		//ゲームオーバー時のスコアは評価しない
-		for(int i = 0; i < 3; i++)
+		for(int i = 0; i < 4; i++)
 		{
 			for(int j = 0; j < 10; j++)
 			{
@@ -1329,43 +1329,48 @@ public:
 				{
 					continue;
 				}
-				BoardSim(field, j, 0);
+				h = BoardSim(field, j, 0);
 				//次のターンに使うフィールドを作成する
-				for(int k = 0; k < 19; k++)
+				if(h < 0)
 				{
-					for(int l = 0; l < 10; l++)
+					for(int k = 0; k < 19; k++)
 					{
-						sec_field[k][l] = field[k][l];
+						for(int l = 0; l < 10; l++)
+						{
+							sec_field[k][l] = field[k][l];
+						}
 					}
-				}
-				//回転→場所の順で調べる（2ターン目）
-				for(int k = 0; k < 4; k++)
-				{
-					myObstacle -= packs[turn + 1].fillWithObstacle(myObstacle);
-					sides = packs[turn + 1].getSides();
-					for(int l = 0; l < 12; l++)
+					//回転→場所の順で調べる（2ターン目）
+					for(int k = 0; k < 4; k++)
 					{
-						//落とせるかどうか確認
-						if(l - 2 < -sides.first || l - 2 > W - sides.second - 1)
+						myObstacle -= packs[turn + 1].fillWithObstacle(myObstacle);
+						sides = packs[turn + 1].getSides();
+						for(int l = 0; l < 12; l++)
 						{
-							continue;
-						}
-						tempscore = BoardSim(sec_field, l, 1);
-						//スコアを更新してれば書き換え
-						if(tempscore >= maxscore)
-						{
-							maxscore = tempscore;
-						}
-						//フィールドの初期化
-						for(int m = 0; m < 19; m++)
-						{
-							for(int n = 0; n < 10; n++)
+							//落とせるかどうか確認
+							if(l - 2 < -sides.first || l - 2 > W - sides.second - 1)
 							{
-								sec_field[m][n] = field[m][n];
+								continue;
+							}
+							tempscore = BoardSim(sec_field, l, 1);
+							//スコアを更新してれば書き換え
+							if(tempscore >= maxscore)
+							{
+								maxscore = tempscore;
+							}
+							//フィールドの初期化
+							for(int m = 0; m < 19; m++)
+							{
+								for(int n = 0; n < 10; n++)
+								{
+									sec_field[m][n] = field[m][n];
+								}
 							}
 						}
+						packs[turn + 1].rotate(1);
 					}
-					packs[turn + 1].rotate(1);
+				} else {
+					maxscore = h;
 				}
 				//2ターン目のシミュレーション終了
 				//最大スコアを記録
@@ -1386,8 +1391,8 @@ public:
 						field[k + 3][l] = myField.blocks[k][l];
 					}
 				}
+				packs[turn].rotate(1);
 			}
-			packs[turn].rotate(1);
 		}
 		//最大を取る位置と回転を求める
 		for(int i = 0; i < 4; i++)

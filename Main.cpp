@@ -1121,7 +1121,7 @@ public:
 	*フィールドにブロックを落とすことをシミュレートします
 	*field,投下位置(W基準),相対ターン
 	*/
-	int BoardSim(int field[][10], int touka, Pack pack)
+	pair<int, int> BoardSim(int field[][10], int touka, Pack pack)
 	{
 		int h = 0;
 		pair<int, int> score;
@@ -1144,19 +1144,20 @@ public:
 		}
 		//消すことをシミュレート
 		score = DelBrock(field);
-		return score.first;
+		return score;
 	}
 
 	/*
 	*評価関数から評価値を求めるための関数
 	*評価値=発火時のスコア(-発火後に残ったゴミ*連鎖数)
 	*/
-	void RensaSim(int field[][10])
+	void RensaSim(int field[][10],Pack pack)
 	{
 		int Simfield[19][10];
 		hyoka = -10000; //直前のスコア
 		int temp; //評価関数の計算
 		pair <int, int> score = pair<int, int>(0, 0); //スコア
+		pair<int, int>sides;
 		int cnt = 0; //ゴミを数える
 		//開始時点でゲームオーバーだったら評価しない
 		for(int i = 0; i < 3; i++)
@@ -1169,12 +1170,12 @@ public:
 				}
 			}
 		}
-		cerr << "not game over" << endl;
-		for(int i = 0; i < 10; i++)
+		for(int i = 0; i < 4; i++)
 		{
-			for(int j = 0; j < 10; j++)
+			for(int j = 0; j < 12; j++)
 			{
 				//盤面の初期化
+				temp = 0;
 				for(int k = 0; k < 19; k++)
 				{
 					for(int l = 0; l < 10; l++)
@@ -1182,15 +1183,19 @@ public:
 						Simfield[i][j] = field[i][j];
 					}
 				}
-				Simfield[0][i] = j;
-				score = DelBrock(Simfield);
-				temp = score.first * score.second; //連鎖数*スコア
+				sides = pack.getSides();
+				if(j - 2 < -sides.first || j - 2 > 10 - sides.second - 1)
+				{
+					continue;
+				}
+				score = BoardSim(Simfield, j, pack);
+				temp += score.first * score.second; //連鎖数*スコア
 				//重み付け
 				for(int k = 0; k < 19; k++)
 				{
 					for(int l = 0; l < 10; l++)
 					{
-						if(Simfield[i][j] > 0)
+						if(Simfield[k][l] > 0)
 						{
 							temp -= score.second;
 						}
@@ -1199,9 +1204,10 @@ public:
 				if(temp > hyoka)
 				{
 					hyoka = temp;
-					hakka = pair<int, int>(i, j);
+					hakka = pair<int, int>(i, j - 2);
 				}
 			}
+			pack.rotate(1);
 		}
 		return;
 	}
@@ -2281,10 +2287,7 @@ public:
 								field[i][j] = states[depth - 1][cnt].state[i][j];
 							}
 						}
-						if(myObstacle > 0)
-						{
-							myObstacle -= packs[turn + depth - 1].fillWithObstacle(myObstacle);
-						}
+						myObstacle -= packs[turn + depth - 1].fillWithObstacle(myObstacle);
 						sides = packs[turn + depth - 1].getSides();
 						if(j - 2 < -sides.first || j - 2 > W - sides.second - 1)
 						{
@@ -2298,7 +2301,12 @@ public:
 						//新しい状態の完成
 						Beam next_state = Beam(field, j - 2, i, cnt);
 						//評価関数の計算
-						next_state.RensaSim(field);
+						if(flag < 10)
+						{
+							next_state.RensaSim(field, packs[turn + depth]);
+						} else {
+							next_state.hyoka = flag * 200;
+						}
 						states[depth].push_back(next_state);
 					}
 					packs[turn + depth - 1].rotate(1);
@@ -2313,12 +2321,14 @@ public:
 				states[depth].erase(states[depth].begin() + beam_WIDTH, states[depth].end());
 			}
 			//ゲームオーバーになっているものを削除
+			/*
 			flag = 0;
 			while(states[depth][flag].hyoka != -10000)
 			{
 				flag++;
 			}
 			states[depth].erase(states[depth].begin() + flag, states[depth].end());
+			*/
 			for(int i = 0; i < states[depth].size(); i++)
 			{
 				cerr << states[depth][i].hyoka << " ";
@@ -2329,6 +2339,89 @@ public:
 		cerr << "beam search done" << endl;
 		return turn;
 	}
+
+	/*
+	*そのターンに最もスコアを稼げる落とし方を返す（連鎖考慮済み）
+	*/
+	pair<int, int> execute()
+	{
+		pair<int, int> sides;
+		pair<int, int> heights;
+		int h = 0;
+		int score[4][12]; //各投下位置に落とした場合の消せる個数（-2する）
+		int maxscore = 0;
+		int maxscore_rotate = rand() % 8;
+		int maxscore_pos = rand() % 4;
+		int field[19][10]; //field[H+3][W]
+		for(int i = 0; i < 4; i++)
+		{
+			for(int j = 0; j < 12; j++)
+			{
+				score[i][j] = -1;
+			}
+		}
+		//シミュレートに使うフィールドを作成する
+		for(int i = 0; i < 3; i++)
+		{
+			for(int j = 0; j < 10; j++)
+			{
+				field[i][j] = 0;
+			}
+		}
+		for(int i = 0; i < 16; i++)
+		{
+			for(int j = 0; j < 10; j++)
+			{
+				field[i + 3][j] = myField.blocks[i][j];
+			}
+		}
+		//回転→場所の順で調べる
+		for(int i = 0; i < 4; i++)
+		{
+			myObstacle -= packs[turn].fillWithObstacle(myObstacle);
+			sides = packs[turn].getSides();
+			for(int j = 0; j < 12; j++)
+			{
+				//落とせるかどうか確認
+				if(j - 2 < -sides.first || j - 2 > W - sides.second - 1)
+				{
+					continue;
+				}
+				score[i][j] = BoardSim(field, j, packs[turn]);
+				//フィールドの初期化
+				for(int k = 0; k < 3; k++)
+				{
+					for(int l = 0; l < 10; l++)
+					{
+						field[k][l] = 0;
+					}
+				}
+				for(int k = 0; k < 16; k++)
+				{
+					for(int l = 0; l < 10; l++)
+					{
+						field[k + 3][l] = myField.blocks[k][l];
+					}
+				}
+			}
+			packs[turn].rotate(1);
+		}
+		//最大を取る位置と回転を求める
+		for(int i = 0; i < 4; i++)
+		{
+			for(int j = 0; j < 12; j++)
+			{
+				if(score[i][j] > maxscore)
+				{
+					maxscore = score[i][j];
+					maxscore_rotate = i;
+					maxscore_pos = j - 2;
+				}
+			}
+		}
+		return pair<int, int>(maxscore_pos, maxscore_rotate);
+	}
+
   /**
    * Stateを入力します。Stateを生成するときは必ず呼び出してください。
    */
@@ -2342,7 +2435,7 @@ public:
     }
     st.myField = Field(st.W, st.H);
     st.enemyField = Field(st.W, st.H);
-		st.keika = 51;
+		st.keika = 55;
     return st;
   }
 
@@ -2374,23 +2467,24 @@ public:
 		}*/
 		//以下普通にビームサーチするだけ（例外処理あり）
 		//おじゃまが1個でもあればビームサーチをやり直す
-		if(myObstacle > 0)
+		if(myObstacle > 0 || keika == 51)
 		{
 			cerr << "ojama detect" << endl;
-			first = Beam_Search();
-			keika = 1;
-		}
-		while(keika > 50)
-		{
-			first = Beam_Search();
-			keika = 1;
-			beamres[50] = 0;
-			for(int i = 1; i < 50; i++)
+			exec = states[keika - 1][beamres[keika - 1]].hakka;
+			keika = 52;
+		} else {
+			while(keika > 51)
 			{
-				beamres[50 - i] = states[i][beamres[51 - i]].prev_state;
+				first = Beam_Search();
+				keika = 1;
+				beamres[50] = 0;
+				for(int i = 1; i < 50; i++)
+				{
+					beamres[50 - i] = states[i][beamres[51 - i]].prev_state;
+				}
 			}
+			exec = states[keika][beamres[keika]].getExecute();
 		}
-		exec = states[keika][beamres[keika]].getExecute();
 		keika++;
 		packs[turn].rotate(exec.second);
 
